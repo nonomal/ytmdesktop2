@@ -1,11 +1,11 @@
 import { ApiWorker, createApiWorker } from "@main/api/createApiWorker";
 import { AfterInit, BaseProvider, OnDestroy } from "@main/utils/baseProvider";
 import { IpcContext, IpcHandle, IpcOn } from "@main/utils/onIpcEvent";
-import type { App } from "electron";
+import { ipcMain, type App } from "electron";
 import fetch from "node-fetch";
 import Vibrant from "node-vibrant";
 
-import { API_ROUTES } from "../utils/eventNames";
+import IPC_EVENT_NAMES, { API_ROUTES } from "../utils/eventNames";
 import TrackProvider from "./trackProvider.plugin";
 
 @IpcContext
@@ -94,7 +94,7 @@ export default class ApiProvider extends BaseProvider implements AfterInit, OnDe
           return isLiked;
         });
 
-        return null;
+    return null;
   }
   @IpcHandle(API_ROUTES.TRACK_DISLIKE)
   async postTrackDisLike(_ev, like: boolean) {
@@ -120,9 +120,7 @@ export default class ApiProvider extends BaseProvider implements AfterInit, OnDe
   }
   @IpcHandle(API_ROUTES.TRACK_CONTROL_NEXT)
   async nextTrack() {
-    await this.views.youtubeView.webContents.executeJavaScript(
-      `(el => el && el.click())(document.querySelector(".ytmusic-player-bar.next-button"))`,
-    );
+    return await this.windowContext.sendTrackControl("next");
   }
   @IpcHandle(API_ROUTES.TRACK_CONTROL_FORWARD)
   async forwardTrack(_ev, data) {
@@ -152,28 +150,33 @@ export default class ApiProvider extends BaseProvider implements AfterInit, OnDe
   }
   @IpcHandle(API_ROUTES.TRACK_CONTROL_PREV)
   async prevTrack() {
-    await this.views.youtubeView.webContents.executeJavaScript(
-      `(el => el && el.click())(document.querySelector(".ytmusic-player-bar.previous-button"))`,
-    );
+    return await this.windowContext.sendTrackControl("prev");
   }
   @IpcHandle(API_ROUTES.TRACK_CONTROL_PLAY)
   async playTrack() {
-    if (this.trackProvider.playState === "paused")
-      await this.views.youtubeView.webContents.executeJavaScript(
-        `(el => el && el.click())(document.querySelector(".ytmusic-player-bar#play-pause-button"))`,
-      );
+    return await this.windowContext
+      .sendTrackControl<{ data: { isPlaying: boolean; time: number }; type: any }>("play")
+      .then(({ data: { isPlaying, time } }) => {
+        ipcMain.emit(IPC_EVENT_NAMES.TRACK_PLAYSTATE, null, isPlaying, time);
+        return { isPlaying, time };
+      });
   }
   @IpcHandle(API_ROUTES.TRACK_CONTROL_PAUSE)
   async pauseTrack() {
-    if (this.trackProvider.playState === "playing")
-      await this.views.youtubeView.webContents.executeJavaScript(
-        `(el => el && el.click())(document.querySelector(".ytmusic-player-bar#play-pause-button"))`,
-      );
+    return await this.windowContext
+      .sendTrackControl<{ data: { isPlaying: boolean; time: number }; type: any }>("pause")
+      .then(({ data: { isPlaying, time } }) => {
+        ipcMain.emit(IPC_EVENT_NAMES.TRACK_PLAYSTATE, null, isPlaying, time);
+        return { isPlaying, time };
+      });
   }
   @IpcHandle(API_ROUTES.TRACK_CONTROL_TOGGLE_PLAY)
   async toggleTrackPlayback() {
-    if (this.trackProvider.playState === "playing") return this.pauseTrack();
-    else if (this.trackProvider.playState === "paused") return this.playTrack();
-    return Promise.resolve(null);
+    return await this.windowContext
+      .sendTrackControl<{ data: { isPlaying: boolean; time: number }; type: any }>("toggle")
+      .then(({ data: { isPlaying, time } }) => {
+        ipcMain.emit(IPC_EVENT_NAMES.TRACK_PLAYSTATE, null, isPlaying, time);
+        return { isPlaying, time };
+      });
   }
 }

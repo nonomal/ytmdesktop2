@@ -1,11 +1,39 @@
+
 export const meta = {
   name: "Api Control Handler",
 };
-
 // todo
 const trackControls = {
-  toggle: () =>
-    ((el) => el && el.click())(document.querySelector(".ytmusic-player-bar#play-pause-button")),
+  toggle: player => {
+    const state = player.getPlayerStateObject();
+    if (!state) return;
+    state.isPlaying ? player.pauseVideo() : player.playVideo()
+    return {
+      isPlaying: state.isPlaying,
+      time: player.getCurrentTime()
+    };
+  },
+  play: playerApi => {
+    playerApi.playVideo()
+    return {
+      isPlaying: true,
+      time: playerApi.getCurrentTime()
+    }
+  },
+  pause: playerApi => {
+    playerApi.pauseVideo()
+    return {
+      isPlaying: false,
+      time: playerApi.getCurrentTime()
+    }
+  },
+  next: playerApi => playerApi.nextVideo(),
+  prev: playerApi => playerApi.previousVideo(),
+  isPlaying: player => {
+    const state = player.getPlayerStateObject();
+    if (!state) return;
+    return state.isPlaying;
+  }
 };
 export const afterInit = () => {
   window.domUtils.ensureDomLoaded(() => {
@@ -22,12 +50,21 @@ export const afterInit = () => {
       }
     }
     window.ipcRenderer.on("track:seek", setTimeSkip);
-    window.ipcRenderer.on("track:control", (_ev, data) => {
-      if (!data || typeof data === "object") return;
+    window.ipcRenderer.on("track:control", async (_ev, data) => {
+      if (!data || typeof data !== "object") return;
       const { type } = data;
       const handler = trackControls[type];
       if (!handler) return;
-      handler();
+      const playerApi = window.domUtils.playerApi();
+      // not ready yet
+      if (!playerApi) return;
+
+      const handleResult = await Promise.resolve(handler(playerApi));
+      window.api.emit("track:control/response", {
+        type,
+        data: handleResult
+      })
+
     });
   });
 };

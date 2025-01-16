@@ -5,13 +5,14 @@ import {
   ipcMain,
   WebContentsView,
   WebContentsViewConstructorOptions,
+  WebPreferences,
 } from "electron";
 import { join } from "path";
 import appIconPath from "~/build/favicon.ico?asset";
 import { defaultUrl, isDevelopment, isProduction } from "./devUtils";
 import { loadUrlOfWebContents, LockSizeOptions, lockSizeToParent } from "./webContentUtils";
 
-type CreateApiViewOptions = { lockSize: LockSizeOptions };
+type CreateApiViewOptions = { lockSize: LockSizeOptions } & Pick<WebPreferences, "transparent">;
 export const createApiView = async <T extends WebContentsView>(
   path: string,
   postFunc?: (ctx: T) => Promise<void> | void,
@@ -25,6 +26,7 @@ export const createApiView = async <T extends WebContentsView>(
       webSecurity: isProduction,
       allowRunningInsecureContent: !isProduction,
       preload: join(__dirname, "../preload/api.js"),
+      transparent: options?.transparent
     },
   }) as T;
   await loadUrlOfWebContents(view.webContents, path);
@@ -84,7 +86,7 @@ export const googleLoginPopup = async (authUrl: string, parent?: Electron.Browse
     sandbox: false,
     contextIsolation: true,
     allowRunningInsecureContent: false,
-    preload: join(__dirname, "../../preload/login.js"),
+    preload: join(__dirname, "../preload/login.js"),
   };
   const { lockSize, popup } = await createPopup({
     icon: appIconPath,

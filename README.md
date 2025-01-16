@@ -1,6 +1,9 @@
 <p align="center">
-  <img src="./screenshots/banner.jpg" alt="banner" />
+  
+  ![2024-11-13_23-20-27](https://youtube-music.app/api/og)
+  
 </p>
+
 
 <h2 align="center">
     Youtube Music for Desktop (ytmdesktop2)
@@ -27,15 +30,19 @@ Built-in, without any additional setup required.
 
 ### Last.FM (Scrobble)
 
+![ytmdesktop_2024-11-12_01-15-16](https://github.com/user-attachments/assets/54464921-6891-476b-935f-61fdefb7679d)
+
 ![feature-lastfm2](https://user-images.githubusercontent.com/17952364/212539540-c1efc587-1047-4748-9583-64b609a1ec97.jpg)
 
 ### Mini Player (Beta)
 
-![image](https://user-images.githubusercontent.com/17952364/183205288-abf687ed-7564-4158-859b-c7dad035db8d.png)
+![image](https://github.com/user-attachments/assets/1bd51f13-9cc4-4795-9bb3-4c6d680ed56d)
+
 
 ### Discord Rich Presence
 
-![image](https://user-images.githubusercontent.com/17952364/212539572-0fe93d02-fb6e-48fe-a301-a09c7ff42703.png)
+![image](https://github.com/user-attachments/assets/f548b072-48c8-412f-8d6d-a960f223bacd)
+
 
 ### Custom CSS
 

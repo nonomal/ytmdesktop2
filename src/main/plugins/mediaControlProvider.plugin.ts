@@ -10,6 +10,7 @@ import {
   MediaPlayer as MediaServiceProvider,
 } from "xosms";
 
+import { clamp } from "lodash-es";
 import IPC_EVENT_NAMES from "../utils/eventNames";
 
 @IpcContext
@@ -79,7 +80,6 @@ export default class MediaControlProvider
   @IpcOn(IPC_EVENT_NAMES.TRACK_PLAYSTATE)
   private __handleTrackMediaOSControl(_ev, isPlaying: boolean, progressSeconds: number = 0) {
     if (!this.mediaProviderEnabled()) return;
-
     const { trackData } = this.getProvider("track");
     if (!trackData) {
       this._mediaProvider.playbackStatus = MediaPlayerPlaybackStatus.Stopped;
@@ -93,7 +93,7 @@ export default class MediaControlProvider
       this._mediaProvider.playButtonEnabled = !isPlaying;
       this._mediaProvider.pauseButtonEnabled = isPlaying;
       const [progress, duration] = [progressSeconds, Number(this.trackData!.meta.duration)];
-      this._mediaProvider.setTimeline(duration, progress);
+      this._mediaProvider.setTimeline(duration, clamp(progress, 0, duration));
     }
     this._mediaProvider.update();
   }

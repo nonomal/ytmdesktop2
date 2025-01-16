@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import { webUtils } from "electron/renderer";
 import pkg from "../../package.json";
 import translations from "../translations";
 console.log(window);
@@ -21,6 +22,7 @@ export const setContext = (key: string, value: any) =>
   process.contextIsolated
     ? contextBridge.exposeInMainWorld(key, value)
     : (window[key] = Object.freeze(value));
+ipcRenderer.setMaxListeners(100);
 export default {
   ipcRenderer: {
     emit: (event, ...data) => ipcRenderer.send(event, ...data),
@@ -70,6 +72,7 @@ export default {
     watchCustomCss: (enabled: boolean) => ipcRenderer.emit("settings.customCssWatch", enabled),
     mainWindowState: () => ipcRenderer.invoke("mainWindowState"),
     windowState: () => ipcRenderer.invoke("windowState"),
+    getPathFromFile: (file: File) => webUtils.getPathForFile(file),
   },
   translations,
   domUtils: {
@@ -90,7 +93,27 @@ export default {
         ),
       );
     },
-    playerApi: () =>
-      (document.querySelector("ytmusic-app-layout>ytmusic-player-bar") as any)?.playerApi,
+    playerApi: (() => {
+      let playerApiCache: any;
+      return () =>
+        playerApiCache ||
+        (playerApiCache = (document.querySelector("ytmusic-app-layout>ytmusic-player-bar") as any)
+          ?.playerApi);
+    })(),
+    setInteractiveElements: <T extends HTMLElement>(interactiveElements: T[]) => {
+      let isMouseOverInteractiveElement = false;
+      ipcRenderer.send("set-ignore-mouse-events", true, { forward: true });
+      interactiveElements.forEach((element) => {
+        element.addEventListener("mouseenter", () => {
+          isMouseOverInteractiveElement = true;
+          ipcRenderer.send("set-ignore-mouse-events", false);
+        });
+
+        element.addEventListener("mouseleave", () => {
+          isMouseOverInteractiveElement = false;
+          ipcRenderer.send("set-ignore-mouse-events", true, { forward: true });
+        });
+      });
+    },
   },
 };
